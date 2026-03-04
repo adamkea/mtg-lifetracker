@@ -34,14 +34,22 @@ class PlayerCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onDoubleTap: () =>
-                        showPlayerNameDialog(context, player),
+                    onTap: () => showPlayerNameDialog(context, player),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Text(
-                        player.name,
-                        style: Theme.of(context).textTheme.titleMedium,
-                        overflow: TextOverflow.ellipsis,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              player.name,
+                              style: Theme.of(context).textTheme.titleMedium,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.edit, size: 14, color: Colors.white38),
+                        ],
                       ),
                     ),
                   ),
