@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'mtg_color.dart';
 import 'player.dart';
 
 /// All game logic and state lives here.
@@ -60,6 +61,14 @@ class GameState extends ChangeNotifier {
     final removed = _players.firstWhere((p) => p.id == playerId);
     _players = _players.where((p) => p.id != playerId).toList();
     _lastActionDescription = '${removed.name} removed';
+    notifyListeners();
+  }
+
+  /// Sets the MTG colours for a player's tile. Does not push history.
+  void setPlayerColors(String playerId, List<MtgColor> colors) {
+    _players = _players
+        .map((p) => p.id == playerId ? p.copyWith(colors: List.unmodifiable(colors)) : p)
+        .toList();
     notifyListeners();
   }
 
