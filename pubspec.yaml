@@ -1,5 +1,5 @@
 name: mtg_lifetracker
-description: A Magic: The Gathering life point tracker for 1-6 players.
+description: "A Magic: The Gathering life point tracker for 1-6 players."
 publish_to: none
 version: 1.0.0+1
 
