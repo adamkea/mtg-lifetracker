@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -5,28 +7,59 @@ import 'package:provider/provider.dart';
 import '../models/mtg_color.dart';
 import '../models/player.dart';
 import '../models/game_state.dart';
-import 'life_control_button.dart';
 import 'mana_color_picker.dart';
 import 'player_name_dialog.dart';
 
 /// Displays one player's panel: name, life total, and life-change controls.
 ///
 /// The life total is rendered very large so it's readable from across a table.
-/// Double-tapping the player name opens the rename dialog.
-class PlayerCard extends StatelessWidget {
+/// Tapping the player name opens the rename dialog.
+/// Large minus/plus buttons flank the life total. Pressing them accumulates a
+/// delta that is shown above the life counter for 2 seconds then fades away.
+class PlayerCard extends StatefulWidget {
   final Player player;
 
   const PlayerCard({required this.player, super.key});
+
+  @override
+  State<PlayerCard> createState() => _PlayerCardState();
+}
+
+class _PlayerCardState extends State<PlayerCard> {
+  int _deltaAccumulator = 0;
+  bool _showDelta = false;
+  Timer? _deltaHideTimer;
+
+  void _onLifeChanged(int delta) {
+    setState(() {
+      _deltaAccumulator += delta;
+      _showDelta = true;
+    });
+    _deltaHideTimer?.cancel();
+    _deltaHideTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _showDelta = false;
+          _deltaAccumulator = 0;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _deltaHideTimer?.cancel();
+    super.dispose();
+  }
 
   Color _cardColor(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseColor = isDark
         ? const Color(0xFF16213E)
         : const Color(0xFFFFFFFF);
-    if (player.colors.isEmpty) return baseColor;
-    // Blend each color's tint on top of the base sequentially.
+    if (widget.player.colors.isEmpty) return baseColor;
     var result = baseColor;
-    for (final c in player.colors) {
+    for (final c in widget.player.colors) {
       result = Color.alphaBlend(c.cardTint, result);
     }
     return result;
@@ -40,7 +73,7 @@ class PlayerCard extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (sheetContext) {
-        return _ColorPickerSheet(player: player);
+        return _ColorPickerSheet(player: widget.player);
       },
     );
   }
@@ -51,87 +84,204 @@ class PlayerCard extends StatelessWidget {
     final canRemove = gs.players.length > 1;
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final subtleColor = onSurface.withOpacity(0.38);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final deltaSign = _deltaAccumulator > 0 ? '+' : '';
+    final deltaColor = _deltaAccumulator >= 0
+        ? (isDark ? Colors.greenAccent : const Color(0xFF065F46))
+        : (isDark ? Colors.redAccent : const Color(0xFF9F1239));
 
     return Card(
       margin: const EdgeInsets.all(4),
       color: _cardColor(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+        padding: const EdgeInsets.fromLTRB(0, 6, 0, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Header row: player name + remove button ───────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => showPlayerNameDialog(context, player),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              player.name,
-                              style: Theme.of(context).textTheme.titleMedium,
-                              overflow: TextOverflow.ellipsis,
+            // ── Header row: player name + icons ───────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => showPlayerNameDialog(context, widget.player),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                widget.player.name,
+                                style: Theme.of(context).textTheme.titleMedium,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(Icons.edit, size: 14, color: subtleColor),
-                        ],
+                            const SizedBox(width: 4),
+                            Icon(Icons.edit, size: 14, color: subtleColor),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                // Color picker button
-                GestureDetector(
-                  onTap: () => _showColorPicker(context),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: player.colors.isEmpty
-                        ? Icon(Icons.palette_outlined, size: 18, color: subtleColor)
-                        : _MiniColorIcons(colors: player.colors),
-                  ),
-                ),
-                if (canRemove)
+                  // Color picker button
                   GestureDetector(
-                    onTap: () =>
-                        context.read<GameState>().removePlayer(player.id),
+                    onTap: () => _showColorPicker(context),
                     child: Padding(
                       padding: const EdgeInsets.all(4),
-                      child: Icon(Icons.close, size: 18, color: subtleColor),
+                      child: widget.player.colors.isEmpty
+                          ? Icon(Icons.palette_outlined, size: 18, color: subtleColor)
+                          : _MiniColorIcons(colors: widget.player.colors),
                     ),
                   ),
-              ],
-            ),
-
-            // ── Life total (large, centred) ────────────────────────────────
-            Expanded(
-              child: Center(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    '${player.lifeTotal}',
-                    style: Theme.of(context).textTheme.displayLarge,
-                  ),
-                ),
+                  if (canRemove)
+                    GestureDetector(
+                      onTap: () =>
+                          context.read<GameState>().removePlayer(widget.player.id),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(Icons.close, size: 18, color: subtleColor),
+                      ),
+                    ),
+                ],
               ),
             ),
 
-            // ── Control buttons row ────────────────────────────────────────
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                LifeControlButton(playerId: player.id, delta: -5),
-                LifeControlButton(playerId: player.id, delta: -1),
-                LifeControlButton(playerId: player.id, delta: 1),
-                LifeControlButton(playerId: player.id, delta: 5),
-              ],
+            // ── Main area: minus button | life total + delta | plus button ─
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Minus button ──────────────────────────────────────────
+                  _SideButton(
+                    playerId: widget.player.id,
+                    delta: -1,
+                    onDeltaChanged: _onLifeChanged,
+                  ),
+
+                  // ── Life total + delta indicator ──────────────────────────
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Delta indicator — fades in/out above the life counter
+                        AnimatedOpacity(
+                          opacity: _showDelta ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 300),
+                          child: Text(
+                            '$deltaSign$_deltaAccumulator',
+                            style: TextStyle(
+                              color: deltaColor,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        // Life total
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            '${widget.player.lifeTotal}',
+                            style: Theme.of(context).textTheme.displayLarge,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // ── Plus button ───────────────────────────────────────────
+                  _SideButton(
+                    playerId: widget.player.id,
+                    delta: 1,
+                    onDeltaChanged: _onLifeChanged,
+                  ),
+                ],
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-height side button showing a minus or plus icon.
+///
+/// Behaves identically to the old [LifeControlButton]: a single tap applies
+/// [delta] once (with one undo snapshot); holding for 500 ms begins rapid-fire
+/// changes every 150 ms that collapse to the same snapshot.
+class _SideButton extends StatefulWidget {
+  final String playerId;
+  final int delta;
+  final ValueChanged<int> onDeltaChanged;
+
+  const _SideButton({
+    required this.playerId,
+    required this.delta,
+    required this.onDeltaChanged,
+  });
+
+  @override
+  State<_SideButton> createState() => _SideButtonState();
+}
+
+class _SideButtonState extends State<_SideButton> {
+  Timer? _holdTimer;
+
+  void _onTapDown(TapDownDetails _) {
+    final gs = context.read<GameState>();
+    gs.changeLife(widget.playerId, widget.delta);
+    widget.onDeltaChanged(widget.delta);
+
+    _holdTimer = Timer(const Duration(milliseconds: 500), () {
+      _holdTimer = Timer.periodic(const Duration(milliseconds: 150), (_) {
+        if (mounted) {
+          context.read<GameState>().changeLifeNoHistory(
+                widget.playerId,
+                widget.delta,
+              );
+          widget.onDeltaChanged(widget.delta);
+        }
+      });
+    });
+  }
+
+  void _cancel() {
+    _holdTimer?.cancel();
+    _holdTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPositive = widget.delta > 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final iconColor = isPositive
+        ? (isDark ? Colors.greenAccent : const Color(0xFF065F46))
+        : (isDark ? Colors.redAccent : const Color(0xFF9F1239));
+
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: (_) => _cancel(),
+      onTapCancel: _cancel,
+      child: SizedBox(
+        width: 56,
+        child: Center(
+          child: Icon(
+            isPositive ? Icons.add_circle_outline : Icons.remove_circle_outline,
+            color: iconColor,
+            size: 36,
+          ),
         ),
       ),
     );
