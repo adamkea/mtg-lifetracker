@@ -20,9 +20,14 @@ class PlayerCard extends StatelessWidget {
     final gs = context.watch<GameState>();
     final canRemove = gs.players.length > 1;
 
+    final baseColor = const Color(0xFF16213E);
+    final cardColor = player.color != null
+        ? Color.alphaBlend(player.color!.cardTint, baseColor)
+        : baseColor;
+
     return Card(
       margin: const EdgeInsets.all(4),
-      color: const Color(0xFF16213E),
+      color: cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
