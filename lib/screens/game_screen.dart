@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/game_state.dart';
 import '../models/player.dart';
+import '../models/theme_notifier.dart';
 import '../widgets/player_card.dart';
 import '../widgets/undo_bar.dart';
 
@@ -15,21 +16,35 @@ class GameScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final gs = context.watch<GameState>();
     final players = gs.players;
+    final isDark = context.watch<ThemeNotifier>().isDark;
+    final appBarColor = Theme.of(context).scaffoldBackgroundColor;
+    final iconColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
+    final iconDisabledColor =
+        Theme.of(context).colorScheme.onSurface.withOpacity(0.25);
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D1A),
-        title: const Text(
+        backgroundColor: appBarColor,
+        title: Text(
           'MTG Life Tracker',
-          style: TextStyle(color: Colors.white70, fontSize: 16),
+          style: TextStyle(color: iconColor, fontSize: 16),
         ),
         automaticallyImplyLeading: false,
         actions: [
+          // Light/dark mode toggle
+          IconButton(
+            icon: Icon(
+              isDark ? Icons.light_mode : Icons.dark_mode,
+              color: iconColor,
+            ),
+            tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+            onPressed: context.read<ThemeNotifier>().toggle,
+          ),
           // Add player (disabled at 6)
           IconButton(
             icon: Icon(
               Icons.person_add,
-              color: players.length < 6 ? Colors.white70 : Colors.white24,
+              color: players.length < 6 ? iconColor : iconDisabledColor,
             ),
             tooltip: 'Add player',
             onPressed:
@@ -37,7 +52,7 @@ class GameScreen extends StatelessWidget {
           ),
           // New game — returns to SetupScreen
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white70),
+            icon: Icon(Icons.refresh, color: iconColor),
             tooltip: 'New game',
             onPressed: () => Navigator.of(context).pop(),
           ),
