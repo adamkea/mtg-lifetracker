@@ -1,5 +1,9 @@
 {
   "buildCommand": "bash build.sh",
   "outputDirectory": "build/web",
-  "installCommand": ""
+  "installCommand": "",
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }
