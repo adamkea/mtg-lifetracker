@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/game_state.dart';
+import '../models/mtg_color.dart';
+import '../widgets/mana_color_picker.dart';
 import 'game_screen.dart';
 
 /// Initial screen where the user selects player count and starting life total
@@ -22,6 +24,8 @@ class _SetupScreenState extends State<SetupScreen> {
   int _playerCount = 2;
   int _startingLife = 20;
   final _lifeController = TextEditingController();
+  // One color slot per player (index 0..5), null = no color chosen.
+  final List<MtgColor?> _playerColors = List.filled(6, null);
 
   @override
   void initState() {
@@ -75,6 +79,7 @@ class _SetupScreenState extends State<SetupScreen> {
     context.read<GameState>().startGame(
           playerCount: _playerCount,
           startingLife: _startingLife,
+          colors: _playerColors.take(_playerCount).toList(),
         );
 
     Navigator.of(context).push(
@@ -119,6 +124,35 @@ class _SetupScreenState extends State<SetupScreen> {
                 onSelected: (n) => setState(() => _playerCount = n),
               ),
               const SizedBox(height: 32),
+
+              // Per-player color pickers
+              Text('Player Colors', style: theme.textTheme.titleLarge),
+              const SizedBox(height: 12),
+              ...List.generate(_playerCount, (i) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 72,
+                        child: Text(
+                          'P${i + 1}',
+                          style: theme.textTheme.titleSmall
+                              ?.copyWith(color: Colors.white54),
+                        ),
+                      ),
+                      Expanded(
+                        child: ManaColorPicker(
+                          selected: _playerColors[i],
+                          onChanged: (color) =>
+                              setState(() => _playerColors[i] = color),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 20),
 
               // Starting life total
               Text('Starting Life Total', style: theme.textTheme.titleLarge),

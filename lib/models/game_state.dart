@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'mtg_color.dart';
 import 'player.dart';
 
 /// All game logic and state lives here.
@@ -22,7 +23,12 @@ class GameState extends ChangeNotifier {
   // ── Setup ──────────────────────────────────────────────────────────────────
 
   /// Resets the game with [playerCount] players each starting at [startingLife].
-  void startGame({required int playerCount, required int startingLife}) {
+  /// Optional [colors] assigns a mana color to each player slot (by index).
+  void startGame({
+    required int playerCount,
+    required int startingLife,
+    List<MtgColor?> colors = const [],
+  }) {
     _startingLife = startingLife;
     _history.clear();
     _players = List.generate(
@@ -31,9 +37,20 @@ class GameState extends ChangeNotifier {
         id: 'p$i',
         name: 'Player ${i + 1}',
         lifeTotal: startingLife,
+        color: i < colors.length ? colors[i] : null,
       ),
     );
     _lastActionDescription = '';
+    notifyListeners();
+  }
+
+  /// Updates the mana color for [playerId]. Does not push history.
+  void setPlayerColor(String playerId, MtgColor? color) {
+    _players = _players
+        .map((p) => p.id == playerId
+            ? (color == null ? p.copyWith(clearColor: true) : p.copyWith(color: color))
+            : p)
+        .toList();
     notifyListeners();
   }
 

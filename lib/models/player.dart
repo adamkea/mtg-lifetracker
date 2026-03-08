@@ -1,3 +1,5 @@
+import 'mtg_color.dart';
+
 /// Immutable data class representing a single player.
 ///
 /// All mutations return a new [Player] via [copyWith]. This keeps
@@ -7,18 +9,21 @@ class Player {
   final String id;
   final String name;
   final int lifeTotal;
+  final MtgColor? color;
 
   const Player({
     required this.id,
     required this.name,
     required this.lifeTotal,
+    this.color,
   });
 
-  Player copyWith({String? name, int? lifeTotal}) {
+  Player copyWith({String? name, int? lifeTotal, MtgColor? color, bool clearColor = false}) {
     return Player(
       id: id,
       name: name ?? this.name,
       lifeTotal: lifeTotal ?? this.lifeTotal,
+      color: clearColor ? null : (color ?? this.color),
     );
   }
 
