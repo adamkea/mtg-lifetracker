@@ -78,14 +78,21 @@ class GameScreen extends StatelessWidget {
   ) {
     if (players.length <= 2) {
       // 1–2 players: each card fills its half of the screen height.
+      // With 2 players the top card is rotated 180° so the player sitting at
+      // the far end of the device can read it right-side up.
       return Column(
-        children: players
-            .map((p) => Expanded(child: PlayerCard(player: p)))
-            .toList(),
+        children: players.asMap().entries.map((e) {
+          final card = PlayerCard(player: e.value);
+          final rotate = players.length == 2 && e.key == 0;
+          return Expanded(
+            child: rotate ? RotatedBox(quarterTurns: 2, child: card) : card,
+          );
+        }).toList(),
       );
     }
 
     // 3–6 players: 2-column grid. Compute aspect ratio so cards fill height.
+    // Top row (indices 0 and 1) is rotated 180° for the players at the far end.
     final rows = (players.length / 2).ceil();
     final cardAspectRatio =
         (constraints.maxWidth / 2) / (constraints.maxHeight / rows);
@@ -97,7 +104,10 @@ class GameScreen extends StatelessWidget {
         childAspectRatio: cardAspectRatio,
       ),
       itemCount: players.length,
-      itemBuilder: (_, i) => PlayerCard(player: players[i]),
+      itemBuilder: (_, i) {
+        final card = PlayerCard(player: players[i]);
+        return i < 2 ? RotatedBox(quarterTurns: 2, child: card) : card;
+      },
     );
   }
 }

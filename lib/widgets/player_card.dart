@@ -14,8 +14,9 @@ import 'player_name_dialog.dart';
 ///
 /// The life total is rendered very large so it's readable from across a table.
 /// Tapping the player name opens the rename dialog.
-/// Large minus/plus buttons flank the life total. Pressing them accumulates a
-/// delta that is shown above the life counter for 2 seconds then fades away.
+/// The left half of the card decrements life; the right half increments it.
+/// Small minus/plus icons at the edges indicate the tap zones.
+/// Pressing and holding either half begins rapid-fire changes after 500 ms.
 class PlayerCard extends StatefulWidget {
   final Player player;
 
@@ -91,6 +92,9 @@ class _PlayerCardState extends State<PlayerCard> {
         ? (isDark ? Colors.greenAccent : const Color(0xFF065F46))
         : (isDark ? Colors.redAccent : const Color(0xFF9F1239));
 
+    final minusIconColor = isDark ? Colors.redAccent : const Color(0xFF9F1239);
+    final plusIconColor = isDark ? Colors.greenAccent : const Color(0xFF065F46);
+
     return Card(
       margin: const EdgeInsets.all(4),
       color: _cardColor(context),
@@ -150,54 +154,97 @@ class _PlayerCardState extends State<PlayerCard> {
               ),
             ),
 
-            // ── Main area: minus button | life total + delta | plus button ─
+            // ── Main area: left half = minus, right half = plus ────────────
+            //
+            // A Stack layered as:
+            //   1. Two _HalfTapArea gesture zones (left=minus, right=plus)
+            //   2. Small minus/plus icons at the left/right edges (visual hints)
+            //   3. Life total + delta indicator centred on top
             Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Stack(
                 children: [
-                  // ── Minus button ──────────────────────────────────────────
-                  _SideButton(
-                    playerId: widget.player.id,
-                    delta: -1,
-                    onDeltaChanged: _onLifeChanged,
+                  // Layer 1 – gesture halves
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _HalfTapArea(
+                          playerId: widget.player.id,
+                          delta: -1,
+                          onDeltaChanged: _onLifeChanged,
+                        ),
+                      ),
+                      Expanded(
+                        child: _HalfTapArea(
+                          playerId: widget.player.id,
+                          delta: 1,
+                          onDeltaChanged: _onLifeChanged,
+                        ),
+                      ),
+                    ],
                   ),
 
-                  // ── Life total + delta indicator ──────────────────────────
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Delta indicator — fades in/out above the life counter
-                        AnimatedOpacity(
-                          opacity: _showDelta ? 1.0 : 0.0,
-                          duration: const Duration(milliseconds: 300),
-                          child: Text(
-                            '$deltaSign$_deltaAccumulator',
-                            style: TextStyle(
-                              color: deltaColor,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                  // Layer 2 – minus icon hint (left edge)
+                  IgnorePointer(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 10),
+                        child: Icon(
+                          Icons.remove_circle_outline,
+                          color: minusIconColor,
+                          size: 36,
                         ),
-                        const SizedBox(height: 2),
-                        // Life total
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            '${widget.player.lifeTotal}',
-                            style: Theme.of(context).textTheme.displayLarge,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
 
-                  // ── Plus button ───────────────────────────────────────────
-                  _SideButton(
-                    playerId: widget.player.id,
-                    delta: 1,
-                    onDeltaChanged: _onLifeChanged,
+                  // Layer 2 – plus icon hint (right edge)
+                  IgnorePointer(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: Icon(
+                          Icons.add_circle_outline,
+                          color: plusIconColor,
+                          size: 36,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Layer 3 – life total + delta indicator (centre)
+                  IgnorePointer(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Delta indicator — fades in/out above the life counter
+                          AnimatedOpacity(
+                            opacity: _showDelta ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 300),
+                            child: Text(
+                              '$deltaSign$_deltaAccumulator',
+                              style: TextStyle(
+                                color: deltaColor,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          // Life total
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '${widget.player.lifeTotal}',
+                              style: Theme.of(context).textTheme.displayLarge,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -209,27 +256,27 @@ class _PlayerCardState extends State<PlayerCard> {
   }
 }
 
-/// Full-height side button showing a minus or plus icon.
+/// Full-height, expandable gesture area for one half of the player card.
 ///
-/// Behaves identically to the old [LifeControlButton]: a single tap applies
-/// [delta] once (with one undo snapshot); holding for 500 ms begins rapid-fire
-/// changes every 150 ms that collapse to the same snapshot.
-class _SideButton extends StatefulWidget {
+/// Tapping applies [delta] once (with one undo snapshot).
+/// Holding for 500 ms begins rapid-fire changes every 150 ms that all
+/// collapse to the same undo snapshot.
+class _HalfTapArea extends StatefulWidget {
   final String playerId;
   final int delta;
   final ValueChanged<int> onDeltaChanged;
 
-  const _SideButton({
+  const _HalfTapArea({
     required this.playerId,
     required this.delta,
     required this.onDeltaChanged,
   });
 
   @override
-  State<_SideButton> createState() => _SideButtonState();
+  State<_HalfTapArea> createState() => _HalfTapAreaState();
 }
 
-class _SideButtonState extends State<_SideButton> {
+class _HalfTapAreaState extends State<_HalfTapArea> {
   Timer? _holdTimer;
 
   void _onTapDown(TapDownDetails _) {
@@ -263,27 +310,12 @@ class _SideButtonState extends State<_SideButton> {
 
   @override
   Widget build(BuildContext context) {
-    final isPositive = widget.delta > 0;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final iconColor = isPositive
-        ? (isDark ? Colors.greenAccent : const Color(0xFF065F46))
-        : (isDark ? Colors.redAccent : const Color(0xFF9F1239));
-
     return GestureDetector(
       onTapDown: _onTapDown,
       onTapUp: (_) => _cancel(),
       onTapCancel: _cancel,
-      child: SizedBox(
-        width: 56,
-        child: Center(
-          child: Icon(
-            isPositive ? Icons.add_circle_outline : Icons.remove_circle_outline,
-            color: iconColor,
-            size: 36,
-          ),
-        ),
-      ),
+      // Transparent container needed so the gesture detector fills its area.
+      child: Container(color: Colors.transparent),
     );
   }
 }
