@@ -9,21 +9,21 @@ class Player {
   final String id;
   final String name;
   final int lifeTotal;
-  final MtgColor? color;
+  final List<MtgColor> colors;
 
   const Player({
     required this.id,
     required this.name,
     required this.lifeTotal,
-    this.color,
+    this.colors = const [],
   });
 
-  Player copyWith({String? name, int? lifeTotal, MtgColor? color, bool clearColor = false}) {
+  Player copyWith({String? name, int? lifeTotal, List<MtgColor>? colors}) {
     return Player(
       id: id,
       name: name ?? this.name,
       lifeTotal: lifeTotal ?? this.lifeTotal,
-      color: clearColor ? null : (color ?? this.color),
+      colors: colors ?? this.colors,
     );
   }
 

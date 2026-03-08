@@ -24,8 +24,8 @@ class _SetupScreenState extends State<SetupScreen> {
   int _playerCount = 2;
   int _startingLife = 20;
   final _lifeController = TextEditingController();
-  // One color slot per player (index 0..5), null = no color chosen.
-  final List<MtgColor?> _playerColors = List.filled(6, null);
+  // One color set per player (index 0..5), empty = no colors chosen.
+  final List<Set<MtgColor>> _playerColors = List.generate(6, (_) => {});
 
   @override
   void initState() {
@@ -79,7 +79,7 @@ class _SetupScreenState extends State<SetupScreen> {
     context.read<GameState>().startGame(
           playerCount: _playerCount,
           startingLife: _startingLife,
-          colors: _playerColors.take(_playerCount).toList(),
+          colors: _playerColors.take(_playerCount).map((s) => s.toList()).toList(),
         );
 
     Navigator.of(context).push(
@@ -144,8 +144,8 @@ class _SetupScreenState extends State<SetupScreen> {
                       Expanded(
                         child: ManaColorPicker(
                           selected: _playerColors[i],
-                          onChanged: (color) =>
-                              setState(() => _playerColors[i] = color),
+                          onChanged: (colors) =>
+                              setState(() => _playerColors[i] = colors),
                         ),
                       ),
                     ],
