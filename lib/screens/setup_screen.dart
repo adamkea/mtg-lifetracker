@@ -24,8 +24,8 @@ class _SetupScreenState extends State<SetupScreen> {
   int _playerCount = 2;
   int _startingLife = 20;
   final _lifeController = TextEditingController();
-  // One color slot per player (index 0..5), null = no color chosen.
-  final List<MtgColor?> _playerColors = List.filled(6, null);
+  // Commander color selections per player (index 0..5), empty = no colors chosen.
+  final List<List<MtgColor>> _playerColors = List.generate(6, (_) => []);
 
   @override
   void initState() {
@@ -144,8 +144,8 @@ class _SetupScreenState extends State<SetupScreen> {
                       Expanded(
                         child: ManaColorPicker(
                           selected: _playerColors[i],
-                          onChanged: (color) =>
-                              setState(() => _playerColors[i] = color),
+                          onChanged: (colors) =>
+                              setState(() => _playerColors[i] = colors),
                         ),
                       ),
                     ],
