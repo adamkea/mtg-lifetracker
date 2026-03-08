@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/game_state.dart';
 import '../models/mtg_color.dart';
+import '../models/theme_notifier.dart';
 import '../widgets/mana_color_picker.dart';
 import 'game_screen.dart';
 
@@ -90,110 +91,131 @@ class _SetupScreenState extends State<SetupScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = context.watch<ThemeNotifier>().isDark;
+    final onSurface = theme.colorScheme.onSurface;
+
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 16),
-              // Title
-              Text(
-                'MTG Life Tracker',
-                style: theme.textTheme.headlineLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'New Game Setup',
-                style: theme.textTheme.titleMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-
-              // Player count
-              Text('Number of Players', style: theme.textTheme.titleLarge),
-              const SizedBox(height: 12),
-              _PlayerCountSelector(
-                selected: _playerCount,
-                onSelected: (n) => setState(() => _playerCount = n),
-              ),
-              const SizedBox(height: 32),
-
-              // Per-player color pickers
-              Text('Player Colors', style: theme.textTheme.titleLarge),
-              const SizedBox(height: 12),
-              ...List.generate(_playerCount, (i) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 72,
-                        child: Text(
-                          'P${i + 1}',
-                          style: theme.textTheme.titleSmall
-                              ?.copyWith(color: Colors.white54),
-                        ),
-                      ),
-                      Expanded(
-                        child: ManaColorPicker(
-                          selected: _playerColors[i],
-                          onChanged: (colors) =>
-                              setState(() => _playerColors[i] = colors),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-              const SizedBox(height: 20),
-
-              // Starting life total
-              Text('Starting Life Total', style: theme.textTheme.titleLarge),
-              const SizedBox(height: 12),
-              Row(
-                children: [20, 30, 40].map((preset) {
-                  final isSelected = _startingLife == preset &&
-                      _lifeController.text == preset.toString();
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text('$preset'),
-                      selected: isSelected,
-                      onSelected: (_) => _setLifePreset(preset),
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 16),
+                  // Title
+                  Text(
+                    'MTG Life Tracker',
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      color: onSurface,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
                     ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _lifeController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  _MaxValueFormatter(999),
-                ],
-                style: const TextStyle(color: Colors.white, fontSize: 18),
-                decoration: const InputDecoration(
-                  labelText: 'Custom life total',
-                  prefixIcon: Icon(Icons.favorite, color: Colors.redAccent),
-                ),
-                onChanged: _onLifeChanged,
-              ),
-              const SizedBox(height: 56),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'New Game Setup',
+                    style: theme.textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 48),
 
-              ElevatedButton(
-                onPressed: _startGame,
-                child: const Text('START GAME'),
+                  // Player count
+                  Text('Number of Players', style: theme.textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  _PlayerCountSelector(
+                    selected: _playerCount,
+                    onSelected: (n) => setState(() => _playerCount = n),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Per-player color pickers
+                  Text('Player Colors', style: theme.textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  ...List.generate(_playerCount, (i) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 72,
+                            child: Text(
+                              'P${i + 1}',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: onSurface.withOpacity(0.54),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: ManaColorPicker(
+                              selected: _playerColors[i],
+                              onChanged: (colors) =>
+                                  setState(() => _playerColors[i] = colors),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 20),
+
+                  // Starting life total
+                  Text('Starting Life Total', style: theme.textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [20, 30, 40].map((preset) {
+                      final isSelected = _startingLife == preset &&
+                          _lifeController.text == preset.toString();
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text('$preset'),
+                          selected: isSelected,
+                          onSelected: (_) => _setLifePreset(preset),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _lifeController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      _MaxValueFormatter(999),
+                    ],
+                    style: TextStyle(color: onSurface, fontSize: 18),
+                    decoration: InputDecoration(
+                      labelText: 'Custom life total',
+                      prefixIcon: const Icon(Icons.favorite, color: Colors.redAccent),
+                    ),
+                    onChanged: _onLifeChanged,
+                  ),
+                  const SizedBox(height: 56),
+
+                  ElevatedButton(
+                    onPressed: _startGame,
+                    child: const Text('START GAME'),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            // Theme toggle in top-right corner
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: Icon(
+                  isDark ? Icons.light_mode : Icons.dark_mode,
+                  color: onSurface.withOpacity(0.7),
+                ),
+                tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+                onPressed: context.read<ThemeNotifier>().toggle,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -211,6 +233,13 @@ class _PlayerCountSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final unselectedColor =
+        isDark ? const Color(0xFF1E2A4A) : const Color(0xFFE8EAF6);
+    final selectedColor = const Color(0xFF533483);
+    final unselectedTextColor =
+        isDark ? Colors.white54 : const Color(0xFF533483);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: List.generate(6, (i) {
@@ -223,9 +252,7 @@ class _PlayerCountSelector extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: isSelected
-                  ? const Color(0xFF533483)
-                  : const Color(0xFF1E2A4A),
+              color: isSelected ? selectedColor : unselectedColor,
               borderRadius: BorderRadius.circular(22),
               border: isSelected
                   ? Border.all(color: Colors.white54, width: 1.5)
@@ -235,7 +262,7 @@ class _PlayerCountSelector extends StatelessWidget {
               child: Text(
                 '$n',
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.white54,
+                  color: isSelected ? Colors.white : unselectedTextColor,
                   fontSize: 18,
                   fontWeight:
                       isSelected ? FontWeight.bold : FontWeight.normal,

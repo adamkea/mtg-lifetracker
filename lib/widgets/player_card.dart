@@ -18,8 +18,11 @@ class PlayerCard extends StatelessWidget {
 
   const PlayerCard({required this.player, super.key});
 
-  Color _cardColor() {
-    const baseColor = Color(0xFF16213E);
+  Color _cardColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark
+        ? const Color(0xFF16213E)
+        : const Color(0xFFFFFFFF);
     if (player.colors.isEmpty) return baseColor;
     // Blend each color's tint on top of the base sequentially.
     var result = baseColor;
@@ -32,7 +35,7 @@ class PlayerCard extends StatelessWidget {
   void _showColorPicker(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF16213E),
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -46,10 +49,12 @@ class PlayerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final gs = context.watch<GameState>();
     final canRemove = gs.players.length > 1;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final subtleColor = onSurface.withOpacity(0.38);
 
     return Card(
       margin: const EdgeInsets.all(4),
-      color: _cardColor(),
+      color: _cardColor(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
@@ -75,7 +80,7 @@ class PlayerCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(Icons.edit, size: 14, color: Colors.white38),
+                          Icon(Icons.edit, size: 14, color: subtleColor),
                         ],
                       ),
                     ),
@@ -87,7 +92,7 @@ class PlayerCard extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(4),
                     child: player.colors.isEmpty
-                        ? const Icon(Icons.palette_outlined, size: 18, color: Colors.white38)
+                        ? Icon(Icons.palette_outlined, size: 18, color: subtleColor)
                         : _MiniColorIcons(colors: player.colors),
                   ),
                 ),
@@ -95,9 +100,9 @@ class PlayerCard extends StatelessWidget {
                   GestureDetector(
                     onTap: () =>
                         context.read<GameState>().removePlayer(player.id),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(Icons.close, size: 18, color: Colors.white38),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(Icons.close, size: 18, color: subtleColor),
                     ),
                   ),
               ],
@@ -188,6 +193,7 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       child: Column(
@@ -199,7 +205,7 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
             style: Theme.of(context)
                 .textTheme
                 .titleMedium
-                ?.copyWith(color: Colors.white),
+                ?.copyWith(color: onSurface),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),

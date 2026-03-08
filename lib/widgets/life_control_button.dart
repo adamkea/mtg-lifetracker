@@ -62,6 +62,15 @@ class _LifeControlButtonState extends State<LifeControlButton> {
     final sign = widget.delta > 0 ? '+' : '';
     final label = '$sign${widget.delta}';
     final isPositive = widget.delta > 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor = isPositive
+        ? (isDark ? const Color(0xFF1B4332) : const Color(0xFFD1FAE5))
+        : (isDark ? const Color(0xFF3B1A1A) : const Color(0xFFFFE4E6));
+
+    final textColor = isPositive
+        ? (isDark ? Colors.greenAccent : const Color(0xFF065F46))
+        : (isDark ? Colors.redAccent : const Color(0xFF9F1239));
 
     return GestureDetector(
       onTapDown: _onTapDown,
@@ -70,15 +79,13 @@ class _LifeControlButtonState extends State<LifeControlButton> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isPositive
-              ? const Color(0xFF1B4332) // dark green for +
-              : const Color(0xFF3B1A1A), // dark red for -
+          color: bgColor,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isPositive ? Colors.greenAccent : Colors.redAccent,
+            color: textColor,
             fontSize: 15,
             fontWeight: FontWeight.bold,
           ),
