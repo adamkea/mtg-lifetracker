@@ -23,11 +23,11 @@ class GameState extends ChangeNotifier {
   // ── Setup ──────────────────────────────────────────────────────────────────
 
   /// Resets the game with [playerCount] players each starting at [startingLife].
-  /// Optional [colors] assigns a mana color to each player slot (by index).
+  /// Optional [colors] assigns mana colors to each player slot (by index).
   void startGame({
     required int playerCount,
     required int startingLife,
-    List<MtgColor?> colors = const [],
+    List<List<MtgColor>> colors = const [],
   }) {
     _startingLife = startingLife;
     _history.clear();
@@ -37,19 +37,17 @@ class GameState extends ChangeNotifier {
         id: 'p$i',
         name: 'Player ${i + 1}',
         lifeTotal: startingLife,
-        color: i < colors.length ? colors[i] : null,
+        colors: i < colors.length ? colors[i] : const [],
       ),
     );
     _lastActionDescription = '';
     notifyListeners();
   }
 
-  /// Updates the mana color for [playerId]. Does not push history.
-  void setPlayerColor(String playerId, MtgColor? color) {
+  /// Updates the mana colors for [playerId]. Does not push history.
+  void setPlayerColors(String playerId, List<MtgColor> colors) {
     _players = _players
-        .map((p) => p.id == playerId
-            ? (color == null ? p.copyWith(clearColor: true) : p.copyWith(color: color))
-            : p)
+        .map((p) => p.id == playerId ? p.copyWith(colors: colors) : p)
         .toList();
     notifyListeners();
   }

@@ -3,28 +3,37 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../models/mtg_color.dart';
 
-/// A row of 5 tappable mana-symbol buttons for selecting an MTG color.
+/// A row of 5 tappable mana-symbol buttons for selecting MTG colors.
 ///
-/// Pass [selected] to highlight the current pick. Tapping the already-selected
-/// symbol deselects it (calls [onChanged] with null).
+/// Supports multi-selection: tap to toggle each color on/off.
+/// Pass [selected] as the set of currently chosen colors and [onChanged]
+/// to receive the updated set after each tap.
 class ManaColorPicker extends StatelessWidget {
-  final MtgColor? selected;
-  final ValueChanged<MtgColor?> onChanged;
+  final Set<MtgColor> selected;
+  final ValueChanged<Set<MtgColor>> onChanged;
 
   const ManaColorPicker({
     required this.onChanged,
-    this.selected,
+    Set<MtgColor>? selected,
     super.key,
-  });
+  }) : selected = selected ?? const {};
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: MtgColor.values.map((color) {
-        final isSelected = selected == color;
+        final isSelected = selected.contains(color);
         return GestureDetector(
-          onTap: () => onChanged(isSelected ? null : color),
+          onTap: () {
+            final next = Set<MtgColor>.from(selected);
+            if (isSelected) {
+              next.remove(color);
+            } else {
+              next.add(color);
+            }
+            onChanged(next);
+          },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             width: 48,
