@@ -11,48 +11,40 @@ class UndoBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gs = context.watch<GameState>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? Colors.black87 : const Color(0xFFE2E2EF);
-    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      height: 52,
-      color: bgColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              gs.lastActionDescription,
-              style: TextStyle(
-                color: onSurface.withOpacity(0.54),
-                fontSize: 13,
+    return Material(
+      color: colorScheme.surfaceContainer,
+      child: SizedBox(
+        height: 52,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  gs.lastActionDescription,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          TextButton.icon(
-            onPressed: gs.canUndo ? gs.undo : null,
-            icon: Icon(
-              Icons.undo,
-              color: gs.canUndo
-                  ? onSurface
-                  : onSurface.withOpacity(0.3),
-              size: 20,
-            ),
-            label: Text(
-              'UNDO',
-              style: TextStyle(
-                color: gs.canUndo
-                    ? onSurface
-                    : onSurface.withOpacity(0.3),
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                letterSpacing: 1,
+              TextButton.icon(
+                onPressed: gs.canUndo ? gs.undo : null,
+                icon: const Icon(Icons.undo, size: 20),
+                label: const Text(
+                  'UNDO',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    letterSpacing: 1,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -92,7 +92,7 @@ class _SetupScreenState extends State<SetupScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final onSurface = theme.colorScheme.onSurface;
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       body: SafeArea(
@@ -108,7 +108,6 @@ class _SetupScreenState extends State<SetupScreen> {
                   Text(
                     'MTG Life Tracker',
                     style: theme.textTheme.headlineLarge?.copyWith(
-                      color: onSurface,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1,
                     ),
@@ -125,9 +124,19 @@ class _SetupScreenState extends State<SetupScreen> {
                   // Player count
                   Text('Number of Players', style: theme.textTheme.titleLarge),
                   const SizedBox(height: 12),
-                  _PlayerCountSelector(
-                    selected: _playerCount,
-                    onSelected: (n) => setState(() => _playerCount = n),
+                  Center(
+                    child: SegmentedButton<int>(
+                      segments: List.generate(
+                        6,
+                        (i) => ButtonSegment<int>(
+                          value: i + 1,
+                          label: Text('${i + 1}'),
+                        ),
+                      ),
+                      selected: {_playerCount},
+                      onSelectionChanged: (s) =>
+                          setState(() => _playerCount = s.first),
+                    ),
                   ),
                   const SizedBox(height: 32),
 
@@ -144,7 +153,7 @@ class _SetupScreenState extends State<SetupScreen> {
                             child: Text(
                               'P${i + 1}',
                               style: theme.textTheme.titleSmall?.copyWith(
-                                color: onSurface.withOpacity(0.54),
+                                color: colorScheme.onSurface.withOpacity(0.54),
                               ),
                             ),
                           ),
@@ -186,16 +195,18 @@ class _SetupScreenState extends State<SetupScreen> {
                       FilteringTextInputFormatter.digitsOnly,
                       _MaxValueFormatter(999),
                     ],
-                    style: TextStyle(color: onSurface, fontSize: 18),
                     decoration: InputDecoration(
                       labelText: 'Custom life total',
-                      prefixIcon: const Icon(Icons.favorite, color: Colors.redAccent),
+                      prefixIcon: Icon(
+                        Icons.favorite,
+                        color: colorScheme.error,
+                      ),
                     ),
                     onChanged: _onLifeChanged,
                   ),
                   const SizedBox(height: 56),
 
-                  ElevatedButton(
+                  FilledButton(
                     onPressed: _startGame,
                     child: const Text('START GAME'),
                   ),
@@ -209,7 +220,6 @@ class _SetupScreenState extends State<SetupScreen> {
               child: IconButton(
                 icon: Icon(
                   isDark ? Icons.light_mode : Icons.dark_mode,
-                  color: onSurface.withOpacity(0.7),
                 ),
                 tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
                 onPressed: context.read<ThemeNotifier>().toggle,
@@ -218,60 +228,6 @@ class _SetupScreenState extends State<SetupScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _PlayerCountSelector extends StatelessWidget {
-  final int selected;
-  final ValueChanged<int> onSelected;
-
-  const _PlayerCountSelector({
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final unselectedColor =
-        isDark ? const Color(0xFF1E2A4A) : const Color(0xFFE8EAF6);
-    final selectedColor = const Color(0xFF533483);
-    final unselectedTextColor =
-        isDark ? Colors.white54 : const Color(0xFF533483);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: List.generate(6, (i) {
-        final n = i + 1;
-        final isSelected = selected == n;
-        return GestureDetector(
-          onTap: () => onSelected(n),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: isSelected ? selectedColor : unselectedColor,
-              borderRadius: BorderRadius.circular(22),
-              border: isSelected
-                  ? Border.all(color: Colors.white54, width: 1.5)
-                  : null,
-            ),
-            child: Center(
-              child: Text(
-                '$n',
-                style: TextStyle(
-                  color: isSelected ? Colors.white : unselectedTextColor,
-                  fontSize: 18,
-                  fontWeight:
-                      isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ),
-          ),
-        );
-      }),
     );
   }
 }

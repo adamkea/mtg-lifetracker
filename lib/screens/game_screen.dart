@@ -17,42 +17,28 @@ class GameScreen extends StatelessWidget {
     final gs = context.watch<GameState>();
     final players = gs.players;
     final isDark = context.watch<ThemeNotifier>().isDark;
-    final appBarColor = Theme.of(context).scaffoldBackgroundColor;
-    final iconColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
-    final iconDisabledColor =
-        Theme.of(context).colorScheme.onSurface.withOpacity(0.25);
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: appBarColor,
-        title: Text(
-          'MTG Life Tracker',
-          style: TextStyle(color: iconColor, fontSize: 16),
-        ),
+        title: const Text('MTG Life Tracker'),
         automaticallyImplyLeading: false,
         actions: [
           // Light/dark mode toggle
           IconButton(
-            icon: Icon(
-              isDark ? Icons.light_mode : Icons.dark_mode,
-              color: iconColor,
-            ),
+            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
             tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
             onPressed: context.read<ThemeNotifier>().toggle,
           ),
           // Add player (disabled at 6)
           IconButton(
-            icon: Icon(
-              Icons.person_add,
-              color: players.length < 6 ? iconColor : iconDisabledColor,
-            ),
+            icon: const Icon(Icons.person_add),
             tooltip: 'Add player',
             onPressed:
                 players.length < 6 ? context.read<GameState>().addPlayer : null,
           ),
           // New game — returns to SetupScreen
           IconButton(
-            icon: Icon(Icons.refresh, color: iconColor),
+            icon: const Icon(Icons.refresh),
             tooltip: 'New game',
             onPressed: () => Navigator.of(context).pop(),
           ),
