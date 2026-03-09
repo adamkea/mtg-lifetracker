@@ -98,6 +98,7 @@ class _PlayerCardState extends State<PlayerCard> {
     return Card(
       margin: const EdgeInsets.all(4),
       color: _cardColor(context),
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0, 6, 0, 8),
@@ -278,8 +279,10 @@ class _HalfTapArea extends StatefulWidget {
 
 class _HalfTapAreaState extends State<_HalfTapArea> {
   Timer? _holdTimer;
+  bool _pressed = false;
 
   void _onTapDown(TapDownDetails _) {
+    setState(() => _pressed = true);
     final gs = context.read<GameState>();
     gs.changeLife(widget.playerId, widget.delta);
     widget.onDeltaChanged(widget.delta);
@@ -298,24 +301,39 @@ class _HalfTapAreaState extends State<_HalfTapArea> {
   }
 
   void _cancel() {
+    if (mounted) setState(() => _pressed = false);
     _holdTimer?.cancel();
     _holdTimer = null;
   }
 
   @override
   void dispose() {
-    _cancel();
+    _holdTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isPlus = widget.delta > 0;
+    final highlightColor = _pressed
+        ? (isPlus
+            ? (isDark
+                ? Colors.green.withOpacity(0.30)
+                : Colors.green.withOpacity(0.18))
+            : (isDark
+                ? Colors.red.withOpacity(0.30)
+                : Colors.red.withOpacity(0.18)))
+        : Colors.transparent;
+
     return GestureDetector(
       onTapDown: _onTapDown,
       onTapUp: (_) => _cancel(),
       onTapCancel: _cancel,
-      // Transparent container needed so the gesture detector fills its area.
-      child: Container(color: Colors.transparent),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 80),
+        color: highlightColor,
+      ),
     );
   }
 }
