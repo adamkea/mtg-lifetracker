@@ -54,10 +54,8 @@ class _PlayerCardState extends State<PlayerCard> {
   }
 
   Color _cardColor(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark
-        ? const Color(0xFF16213E)
-        : const Color(0xFFFFFFFF);
+    final colorScheme = Theme.of(context).colorScheme;
+    final baseColor = colorScheme.surfaceContainer;
     if (widget.player.colors.isEmpty) return baseColor;
     var result = baseColor;
     for (final c in widget.player.colors) {
@@ -69,7 +67,7 @@ class _PlayerCardState extends State<PlayerCard> {
   void _showColorPicker(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Theme.of(context).cardColor,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -83,23 +81,19 @@ class _PlayerCardState extends State<PlayerCard> {
   Widget build(BuildContext context) {
     final gs = context.watch<GameState>();
     final canRemove = gs.players.length > 1;
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final subtleColor = onSurface.withOpacity(0.38);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     final deltaSign = _deltaAccumulator > 0 ? '+' : '';
     final deltaColor = _deltaAccumulator >= 0
-        ? (isDark ? Colors.greenAccent : const Color(0xFF065F46))
-        : (isDark ? Colors.redAccent : const Color(0xFF9F1239));
-
-    final minusIconColor = isDark ? Colors.redAccent : const Color(0xFF9F1239);
-    final plusIconColor = isDark ? Colors.greenAccent : const Color(0xFF065F46);
+        ? colorScheme.tertiary
+        : colorScheme.error;
 
     return Card(
       margin: const EdgeInsets.all(4),
       color: _cardColor(context),
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0, 6, 0, 8),
         child: Column(
@@ -107,14 +101,18 @@ class _PlayerCardState extends State<PlayerCard> {
           children: [
             // ── Header row: player name + icons ───────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Row(
                 children: [
                   Expanded(
-                    child: GestureDetector(
+                    child: InkWell(
                       onTap: () => showPlayerNameDialog(context, widget.player),
+                      borderRadius: BorderRadius.circular(8),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -126,29 +124,38 @@ class _PlayerCardState extends State<PlayerCard> {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            Icon(Icons.edit, size: 14, color: subtleColor),
+                            Icon(
+                              Icons.edit,
+                              size: 14,
+                              color: colorScheme.onSurface.withOpacity(0.38),
+                            ),
                           ],
                         ),
                       ),
                     ),
                   ),
                   // Color picker button
-                  GestureDetector(
-                    onTap: () => _showColorPicker(context),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: widget.player.colors.isEmpty
-                          ? Icon(Icons.palette_outlined, size: 18, color: subtleColor)
-                          : _MiniColorIcons(colors: widget.player.colors),
-                    ),
+                  IconButton(
+                    onPressed: () => _showColorPicker(context),
+                    iconSize: 18,
+                    visualDensity: VisualDensity.compact,
+                    icon: widget.player.colors.isEmpty
+                        ? Icon(
+                            Icons.palette_outlined,
+                            color: colorScheme.onSurface.withOpacity(0.38),
+                          )
+                        : _MiniColorIcons(colors: widget.player.colors),
                   ),
                   if (canRemove)
-                    GestureDetector(
-                      onTap: () =>
-                          context.read<GameState>().removePlayer(widget.player.id),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(Icons.close, size: 18, color: subtleColor),
+                    IconButton(
+                      onPressed: () => context
+                          .read<GameState>()
+                          .removePlayer(widget.player.id),
+                      iconSize: 18,
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(
+                        Icons.close,
+                        color: colorScheme.onSurface.withOpacity(0.38),
                       ),
                     ),
                 ],
@@ -193,7 +200,7 @@ class _PlayerCardState extends State<PlayerCard> {
                         padding: const EdgeInsets.only(left: 10),
                         child: Icon(
                           Icons.remove_circle_outline,
-                          color: minusIconColor,
+                          color: colorScheme.error,
                           size: 36,
                         ),
                       ),
@@ -208,7 +215,7 @@ class _PlayerCardState extends State<PlayerCard> {
                         padding: const EdgeInsets.only(right: 10),
                         child: Icon(
                           Icons.add_circle_outline,
-                          color: plusIconColor,
+                          color: colorScheme.tertiary,
                           size: 36,
                         ),
                       ),
@@ -221,16 +228,20 @@ class _PlayerCardState extends State<PlayerCard> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Delta indicator — fades in/out above the life counter
+                          // Delta indicator — fades and scales in/out above the life counter
                           AnimatedOpacity(
                             opacity: _showDelta ? 1.0 : 0.0,
                             duration: const Duration(milliseconds: 300),
-                            child: Text(
-                              '$deltaSign$_deltaAccumulator',
-                              style: TextStyle(
-                                color: deltaColor,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
+                            child: AnimatedScale(
+                              scale: _showDelta ? 1.0 : 0.6,
+                              duration: const Duration(milliseconds: 200),
+                              child: Text(
+                                '$deltaSign$_deltaAccumulator',
+                                style: TextStyle(
+                                  color: deltaColor,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
@@ -314,16 +325,12 @@ class _HalfTapAreaState extends State<_HalfTapArea> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     final isPlus = widget.delta > 0;
     final highlightColor = _pressed
         ? (isPlus
-            ? (isDark
-                ? Colors.green.withOpacity(0.30)
-                : Colors.green.withOpacity(0.18))
-            : (isDark
-                ? Colors.red.withOpacity(0.30)
-                : Colors.red.withOpacity(0.18)))
+            ? colorScheme.tertiary.withOpacity(0.25)
+            : colorScheme.error.withOpacity(0.25))
         : Colors.transparent;
 
     return GestureDetector(
@@ -393,7 +400,6 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       child: Column(
@@ -402,10 +408,7 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
         children: [
           Text(
             '${widget.player.name} — Commander Colors',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(color: onSurface),
+            style: Theme.of(context).textTheme.titleMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
@@ -419,7 +422,7 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
             },
           ),
           const SizedBox(height: 20),
-          TextButton(
+          FilledButton.tonal(
             onPressed: () => Navigator.pop(context),
             child: const Text('Done'),
           ),

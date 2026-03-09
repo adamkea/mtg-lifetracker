@@ -13,16 +13,11 @@ Future<void> showPlayerNameDialog(
   final newName = await showDialog<String>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      backgroundColor: const Color(0xFF16213E),
-      title: const Text(
-        'Rename Player',
-        style: TextStyle(color: Colors.white),
-      ),
+      title: const Text('Rename Player'),
       content: TextField(
         controller: controller,
         autofocus: true,
         textCapitalization: TextCapitalization.words,
-        style: const TextStyle(color: Colors.white),
         decoration: const InputDecoration(
           hintText: 'Player name',
         ),
@@ -33,7 +28,7 @@ Future<void> showPlayerNameDialog(
           onPressed: () => Navigator.pop(dialogContext),
           child: const Text('Cancel'),
         ),
-        TextButton(
+        FilledButton(
           onPressed: () => Navigator.pop(dialogContext, controller.text),
           child: const Text('Save'),
         ),
