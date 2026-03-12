@@ -64,6 +64,19 @@ class _PlayerCardState extends State<PlayerCard> {
     return result;
   }
 
+  Gradient? _cardGradient(BuildContext context) {
+    final colors = widget.player.colors;
+    if (colors.length < 2) return null;
+    final base = Theme.of(context).colorScheme.surfaceContainer;
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: colors
+          .map((c) => Color.alphaBlend(c.circleColor.withOpacity(0.25), base))
+          .toList(),
+    );
+  }
+
   void _showColorPicker(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -88,15 +101,21 @@ class _PlayerCardState extends State<PlayerCard> {
         ? colorScheme.tertiary
         : colorScheme.error;
 
+    final gradient = _cardGradient(context);
+
     return Card(
       margin: const EdgeInsets.all(4),
-      color: _cardColor(context),
+      color: gradient != null ? Colors.transparent : _cardColor(context),
+      surfaceTintColor: gradient != null ? Colors.transparent : null,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(0, 6, 0, 8),
-        child: Column(
+      child: Container(
+        decoration:
+            gradient != null ? BoxDecoration(gradient: gradient) : null,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(0, 6, 0, 8),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // ── Header row: player name + icons ───────────────────────────
@@ -263,6 +282,7 @@ class _PlayerCardState extends State<PlayerCard> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
