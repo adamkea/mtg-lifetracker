@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'models/game_state.dart';
 import 'models/theme_notifier.dart';
-import 'screens/setup_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(
@@ -29,7 +29,7 @@ class MtgLifeTrackerApp extends StatelessWidget {
       theme: _buildLightTheme(),
       darkTheme: _buildDarkTheme(),
       themeMode: themeMode,
-      home: const SetupScreen(),
+      home: const SplashScreen(),
     );
   }
 
