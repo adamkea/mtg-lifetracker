@@ -4,9 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/game_state.dart';
-import '../models/mtg_color.dart';
 import '../models/theme_notifier.dart';
-import '../widgets/mana_color_picker.dart';
 import 'game_screen.dart';
 
 /// Initial screen where the user selects player count and starting life total
@@ -25,8 +23,6 @@ class _SetupScreenState extends State<SetupScreen> {
   int _playerCount = 2;
   int _startingLife = 20;
   final _lifeController = TextEditingController();
-  // One color set per player (index 0..5), empty = no colors chosen.
-  final List<Set<MtgColor>> _playerColors = List.generate(6, (_) => {});
 
   @override
   void initState() {
@@ -80,7 +76,7 @@ class _SetupScreenState extends State<SetupScreen> {
     context.read<GameState>().startGame(
           playerCount: _playerCount,
           startingLife: _startingLife,
-          colors: _playerColors.take(_playerCount).map((s) => s.toList()).toList(),
+          colors: List.generate(_playerCount, (_) => []),
         );
 
     Navigator.of(context).push(
@@ -113,13 +109,7 @@ class _SetupScreenState extends State<SetupScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'New Game Setup',
-                    style: theme.textTheme.titleMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 56),
 
                   // Player count
                   Text('Number of Players', style: theme.textTheme.titleLarge),
@@ -138,40 +128,10 @@ class _SetupScreenState extends State<SetupScreen> {
                           setState(() => _playerCount = s.first),
                     ),
                   ),
-                  const SizedBox(height: 32),
-
-                  // Per-player color pickers
-                  Text('Player Colors', style: theme.textTheme.titleLarge),
-                  const SizedBox(height: 12),
-                  ...List.generate(_playerCount, (i) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 72,
-                            child: Text(
-                              'P${i + 1}',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: colorScheme.onSurface.withOpacity(0.54),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: ManaColorPicker(
-                              selected: _playerColors[i],
-                              onChanged: (colors) =>
-                                  setState(() => _playerColors[i] = colors),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 40),
 
                   // Starting life total
-                  Text('Starting Life Total', style: theme.textTheme.titleLarge),
+                  Text('Starting Life', style: theme.textTheme.titleLarge),
                   const SizedBox(height: 12),
                   Row(
                     children: [20, 30, 40].map((preset) {
@@ -196,7 +156,7 @@ class _SetupScreenState extends State<SetupScreen> {
                       _MaxValueFormatter(999),
                     ],
                     decoration: InputDecoration(
-                      labelText: 'Custom life total',
+                      labelText: 'Custom',
                       prefixIcon: Icon(
                         Icons.favorite,
                         color: colorScheme.error,
@@ -208,7 +168,13 @@ class _SetupScreenState extends State<SetupScreen> {
 
                   FilledButton(
                     onPressed: _startGame,
-                    child: const Text('START GAME'),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        'START GAME',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
                 ],
               ),
