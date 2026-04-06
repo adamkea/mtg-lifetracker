@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,8 +10,6 @@ import '../models/mtg_color.dart';
 import '../models/theme_notifier.dart';
 import 'game_screen.dart';
 
-/// Initial screen where the user selects player count and starting life total
-/// before starting a new game.
 class SetupScreen extends StatefulWidget {
   const SetupScreen({super.key});
 
@@ -38,19 +37,13 @@ class _SetupScreenState extends State<SetupScreen>
 
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 700),
     );
-    _fadeIn = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOut,
-    );
+    _fadeIn = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
     _slideUp = Tween<Offset>(
-      begin: const Offset(0, 0.08),
+      begin: const Offset(0, 0.06),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
   }
 
@@ -123,38 +116,33 @@ class _SetupScreenState extends State<SetupScreen>
               child: SlideTransition(
                 position: _slideUp,
                 child: SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 32,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 8),
-                      // Header with orb and title
-                      _buildHeader(theme, colorScheme),
+                      _buildHeader(theme, colorScheme, isDark),
                       const SizedBox(height: 40),
-
-                      // Player count section
                       _buildSectionCard(
-                        theme: theme,
                         colorScheme: colorScheme,
+                        isDark: isDark,
                         icon: Icons.people_outline,
-                        title: 'Players',
-                        child: _buildPlayerSelector(colorScheme),
+                        title: 'PLAYERS',
+                        child: _buildPlayerSelector(colorScheme, isDark),
                       ),
                       const SizedBox(height: 16),
-
-                      // Starting life section
                       _buildSectionCard(
-                        theme: theme,
                         colorScheme: colorScheme,
+                        isDark: isDark,
                         icon: Icons.favorite_outline,
-                        title: 'Starting Life',
-                        child: _buildLifeSelector(colorScheme),
+                        title: 'STARTING LIFE',
+                        child: _buildLifeSelector(colorScheme, isDark),
                       ),
-                      const SizedBox(height: 32),
-
-                      // Start button
-                      _buildStartButton(colorScheme),
+                      const SizedBox(height: 36),
+                      _buildStartButton(colorScheme, isDark),
                       const SizedBox(height: 16),
                     ],
                   ),
@@ -168,7 +156,7 @@ class _SetupScreenState extends State<SetupScreen>
               child: IconButton(
                 icon: Icon(
                   isDark ? Icons.light_mode : Icons.dark_mode,
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withOpacity(0.5),
                 ),
                 tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
                 onPressed: context.read<ThemeNotifier>().toggle,
@@ -180,88 +168,100 @@ class _SetupScreenState extends State<SetupScreen>
     );
   }
 
-  Widget _buildHeader(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildHeader(ThemeData theme, ColorScheme cs, bool isDark) {
     return Column(
       children: [
         // Logo orb
         Container(
-          width: 72,
-          height: 72,
+          width: 80,
+          height: 80,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: const RadialGradient(
-              colors: [Color(0xFF9B72D8), Color(0xFF533483)],
-              stops: [0.2, 1.0],
+              colors: [Color(0xFFA78BFA), Color(0xFF5B21B6), Color(0xFF2D1060)],
+              stops: [0.0, 0.55, 1.0],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF533483).withOpacity(0.4),
-                blurRadius: 24,
-                spreadRadius: 2,
-              ),
-            ],
+            boxShadow: isDark
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF7C3AED).withOpacity(0.55),
+                      blurRadius: 28,
+                      spreadRadius: 4,
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFF7C3AED).withOpacity(0.2),
+                      blurRadius: 60,
+                      spreadRadius: 8,
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: const Color(0xFF533483).withOpacity(0.4),
+                      blurRadius: 24,
+                      spreadRadius: 2,
+                    ),
+                  ],
           ),
           child: const Center(
             child: Text(
               '♦',
               style: TextStyle(
-                fontSize: 32,
+                fontSize: 36,
                 color: Colors.white,
-                shadows: [Shadow(color: Colors.white38, blurRadius: 8)],
+                shadows: [Shadow(color: Colors.white70, blurRadius: 8)],
               ),
             ),
           ),
         ),
         const SizedBox(height: 16),
-        // Mana icons row
+        // Mana icons
         Row(
           mainAxisSize: MainAxisSize.min,
           children: MtgColor.values.map((color) {
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 5),
               child: Container(
-                width: 28,
-                height: 28,
+                width: 30,
+                height: 30,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: color.circleColor,
                   boxShadow: [
                     BoxShadow(
-                      color: color.circleColor.withOpacity(0.35),
-                      blurRadius: 4,
-                      spreadRadius: 0.5,
+                      color: color.circleColor.withOpacity(isDark ? 0.6 : 0.3),
+                      blurRadius: isDark ? 8 : 4,
+                      spreadRadius: isDark ? 1 : 0.5,
                     ),
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(5),
+                  padding: const EdgeInsets.all(5.5),
                   child: SvgPicture.asset(
                     color.assetPath,
-                    colorFilter: ColorFilter.mode(
-                      color.iconColor,
-                      BlendMode.srcIn,
-                    ),
+                    colorFilter: ColorFilter.mode(color.iconColor, BlendMode.srcIn),
                   ),
                 ),
               ),
             );
           }).toList(),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         Text(
-          'MTG Life Tracker',
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
+          'MTG LIFE TRACKER',
+          style: GoogleFonts.russoOne(
+            fontSize: 22,
+            letterSpacing: 3,
+            color: cs.onSurface,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           'Set up your game',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.5),
-            letterSpacing: 1,
+          style: GoogleFonts.chakraPetch(
+            fontSize: 13,
+            letterSpacing: 1.5,
+            color: cs.onSurface.withOpacity(0.4),
           ),
           textAlign: TextAlign.center,
         ),
@@ -270,8 +270,8 @@ class _SetupScreenState extends State<SetupScreen>
   }
 
   Widget _buildSectionCard({
-    required ThemeData theme,
     required ColorScheme colorScheme,
+    required bool isDark,
     required IconData icon,
     required String title,
     required Widget child,
@@ -279,10 +279,22 @@ class _SetupScreenState extends State<SetupScreen>
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: colorScheme.surfaceContainerLow,
+        color: isDark ? const Color(0xFF0E0E1C) : colorScheme.surfaceContainerLow,
         border: Border.all(
-          color: colorScheme.outlineVariant.withOpacity(0.3),
+          color: isDark
+              ? colorScheme.primary.withOpacity(0.2)
+              : colorScheme.outlineVariant.withOpacity(0.4),
+          width: 1,
         ),
+        boxShadow: isDark
+            ? [
+                BoxShadow(
+                  color: colorScheme.primary.withOpacity(0.06),
+                  blurRadius: 20,
+                  spreadRadius: 0,
+                ),
+              ]
+            : null,
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -290,13 +302,15 @@ class _SetupScreenState extends State<SetupScreen>
         children: [
           Row(
             children: [
-              Icon(icon, size: 20, color: colorScheme.primary),
+              Icon(icon, size: 18, color: colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 title,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: GoogleFonts.chakraPetch(
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
+                  letterSpacing: 2,
+                  color: colorScheme.primary,
                 ),
               ),
             ],
@@ -308,10 +322,9 @@ class _SetupScreenState extends State<SetupScreen>
     );
   }
 
-  Widget _buildPlayerSelector(ColorScheme colorScheme) {
+  Widget _buildPlayerSelector(ColorScheme cs, bool isDark) {
     return Column(
       children: [
-        // Grid of player count options
         GridView.count(
           crossAxisCount: 6,
           shrinkWrap: true,
@@ -329,19 +342,23 @@ class _SetupScreenState extends State<SetupScreen>
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   color: isSelected
-                      ? colorScheme.primary
-                      : colorScheme.surfaceContainerHighest,
+                      ? cs.primary.withOpacity(isDark ? 0.2 : 1.0)
+                      : (isDark
+                          ? const Color(0xFF111122)
+                          : cs.surfaceContainerHighest),
                   border: Border.all(
                     color: isSelected
-                        ? colorScheme.primary
-                        : colorScheme.outlineVariant.withOpacity(0.4),
-                    width: isSelected ? 2 : 1,
+                        ? cs.primary
+                        : (isDark
+                            ? const Color(0xFF252540)
+                            : cs.outlineVariant.withOpacity(0.4)),
+                    width: isSelected ? 1.5 : 1,
                   ),
-                  boxShadow: isSelected
+                  boxShadow: isSelected && isDark
                       ? [
                           BoxShadow(
-                            color: colorScheme.primary.withOpacity(0.3),
-                            blurRadius: 8,
+                            color: cs.primary.withOpacity(0.4),
+                            blurRadius: 12,
                             spreadRadius: 0,
                           ),
                         ]
@@ -350,13 +367,11 @@ class _SetupScreenState extends State<SetupScreen>
                 child: Center(
                   child: Text(
                     '$count',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w500,
+                    style: GoogleFonts.russoOne(
+                      fontSize: 20,
                       color: isSelected
-                          ? colorScheme.onPrimary
-                          : colorScheme.onSurface.withOpacity(0.7),
+                          ? (isDark ? cs.primary : cs.onPrimary)
+                          : cs.onSurface.withOpacity(0.5),
                     ),
                   ),
                 ),
@@ -365,21 +380,20 @@ class _SetupScreenState extends State<SetupScreen>
           }),
         ),
         const SizedBox(height: 12),
-        // Player count label
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.person,
-              size: 16,
-              color: colorScheme.onSurface.withOpacity(0.4),
+              size: 14,
+              color: cs.onSurface.withOpacity(0.3),
             ),
             const SizedBox(width: 4),
             Text(
               '$_playerCount player${_playerCount != 1 ? 's' : ''}',
-              style: TextStyle(
-                fontSize: 13,
-                color: colorScheme.onSurface.withOpacity(0.4),
+              style: GoogleFonts.chakraPetch(
+                fontSize: 12,
+                color: cs.onSurface.withOpacity(0.3),
               ),
             ),
           ],
@@ -388,10 +402,9 @@ class _SetupScreenState extends State<SetupScreen>
     );
   }
 
-  Widget _buildLifeSelector(ColorScheme colorScheme) {
+  Widget _buildLifeSelector(ColorScheme cs, bool isDark) {
     return Column(
       children: [
-        // Preset buttons
         Row(
           children: [20, 30, 40].map((preset) {
             final isSelected = _startingLife == preset &&
@@ -408,19 +421,23 @@ class _SetupScreenState extends State<SetupScreen>
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       color: isSelected
-                          ? colorScheme.primary
-                          : colorScheme.surfaceContainerHighest,
+                          ? cs.primary.withOpacity(isDark ? 0.2 : 1.0)
+                          : (isDark
+                              ? const Color(0xFF111122)
+                              : cs.surfaceContainerHighest),
                       border: Border.all(
                         color: isSelected
-                            ? colorScheme.primary
-                            : colorScheme.outlineVariant.withOpacity(0.4),
-                        width: isSelected ? 2 : 1,
+                            ? cs.primary
+                            : (isDark
+                                ? const Color(0xFF252540)
+                                : cs.outlineVariant.withOpacity(0.4)),
+                        width: isSelected ? 1.5 : 1,
                       ),
-                      boxShadow: isSelected
+                      boxShadow: isSelected && isDark
                           ? [
                               BoxShadow(
-                                color: colorScheme.primary.withOpacity(0.3),
-                                blurRadius: 8,
+                                color: cs.primary.withOpacity(0.4),
+                                blurRadius: 12,
                                 spreadRadius: 0,
                               ),
                             ]
@@ -432,22 +449,19 @@ class _SetupScreenState extends State<SetupScreen>
                         children: [
                           Icon(
                             Icons.favorite,
-                            size: 16,
+                            size: 14,
                             color: isSelected
-                                ? colorScheme.onPrimary
-                                : colorScheme.error.withOpacity(0.6),
+                                ? (isDark ? cs.primary : cs.onPrimary)
+                                : cs.error.withOpacity(0.5),
                           ),
                           const SizedBox(width: 6),
                           Text(
                             '$preset',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
+                            style: GoogleFonts.russoOne(
+                              fontSize: 17,
                               color: isSelected
-                                  ? colorScheme.onPrimary
-                                  : colorScheme.onSurface.withOpacity(0.7),
+                                  ? (isDark ? cs.primary : cs.onPrimary)
+                                  : cs.onSurface.withOpacity(0.55),
                             ),
                           ),
                         ],
@@ -460,7 +474,6 @@ class _SetupScreenState extends State<SetupScreen>
           }).toList(),
         ),
         const SizedBox(height: 12),
-        // Custom input
         TextField(
           controller: _lifeController,
           keyboardType: TextInputType.number,
@@ -468,11 +481,15 @@ class _SetupScreenState extends State<SetupScreen>
             FilteringTextInputFormatter.digitsOnly,
             _MaxValueFormatter(999),
           ],
+          style: GoogleFonts.chakraPetch(
+            fontSize: 16,
+            color: cs.onSurface,
+          ),
           decoration: InputDecoration(
             labelText: 'Custom',
             prefixIcon: Icon(
               Icons.edit_outlined,
-              color: colorScheme.primary.withOpacity(0.6),
+              color: cs.primary.withOpacity(0.6),
               size: 20,
             ),
           ),
@@ -482,49 +499,66 @@ class _SetupScreenState extends State<SetupScreen>
     );
   }
 
-  Widget _buildStartButton(ColorScheme colorScheme) {
+  Widget _buildStartButton(ColorScheme cs, bool isDark) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withBlue(
-              (colorScheme.primary.blue + 30).clamp(0, 255),
-            ),
-          ],
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6D28D9), Color(0xFF7C3AED), Color(0xFF8B5CF6)],
+          stops: [0.0, 0.5, 1.0],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withOpacity(0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: isDark
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF7C3AED).withOpacity(0.55),
+                  blurRadius: 24,
+                  offset: const Offset(0, 6),
+                ),
+                BoxShadow(
+                  color: const Color(0xFF7C3AED).withOpacity(0.2),
+                  blurRadius: 48,
+                  offset: const Offset(0, 10),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: cs.primary.withOpacity(0.35),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: _startGame,
           borderRadius: BorderRadius.circular(16),
+          splashColor: Colors.white.withOpacity(0.15),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 18),
+            padding: const EdgeInsets.symmetric(vertical: 20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.play_arrow_rounded,
-                  color: colorScheme.onPrimary,
-                  size: 24,
+                  color: Colors.white,
+                  size: 26,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Text(
                   'START GAME',
-                  style: TextStyle(
+                  style: GoogleFonts.russoOne(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                    color: colorScheme.onPrimary,
+                    letterSpacing: 3,
+                    color: Colors.white,
+                    shadows: isDark
+                        ? [
+                            const Shadow(
+                              color: Colors.white38,
+                              blurRadius: 12,
+                            ),
+                          ]
+                        : null,
                   ),
                 ),
               ],
@@ -536,7 +570,6 @@ class _SetupScreenState extends State<SetupScreen>
   }
 }
 
-/// Limits text field input to a maximum integer value.
 class _MaxValueFormatter extends TextInputFormatter {
   final int maxValue;
   _MaxValueFormatter(this.maxValue);

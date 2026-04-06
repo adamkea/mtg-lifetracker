@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../models/mtg_color.dart';
@@ -8,12 +9,12 @@ import '../models/game_state.dart';
 import 'mana_color_picker.dart';
 import 'player_name_dialog.dart';
 
-/// Displays one player's panel edge-to-edge with no gaps or borders.
+/// Displays one player's panel edge-to-edge.
 ///
-/// The life total dominates the space. A long-press anywhere on the card
-/// reveals a contextual action sheet (rename, colors, remove).
-/// Tapping left half decrements life; right half increments it.
-/// Hold either half to rapid-fire changes.
+/// Life total dominates the space with a neon glow effect.
+/// Low life (≤5) switches to a red danger glow.
+/// Tap left half to decrement; right half to increment. Hold to rapid-fire.
+/// Long-press anywhere for the player action sheet.
 class PlayerCard extends StatefulWidget {
   final Player player;
 
@@ -69,7 +70,7 @@ class _PlayerCardState extends State<PlayerCard> {
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: colors
-          .map((c) => Color.alphaBlend(c.circleColor.withOpacity(0.3), base))
+          .map((c) => Color.alphaBlend(c.circleColor.withOpacity(0.22), base))
           .toList(),
     );
   }
@@ -91,10 +92,42 @@ class _PlayerCardState extends State<PlayerCard> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final gradient = _gradient(context);
+    final life = widget.player.lifeTotal;
 
     final deltaSign = _deltaAccumulator > 0 ? '+' : '';
     final deltaColor =
         _deltaAccumulator >= 0 ? colorScheme.tertiary : colorScheme.error;
+
+    // Neon glow: danger (≤5) = rose, dead (≤0) = dim, normal = purple
+    final bool isDanger = life > 0 && life <= 5;
+    final bool isDead = life <= 0;
+    final lifeGlowColor = isDanger
+        ? colorScheme.error
+        : isDead
+            ? Colors.transparent
+            : colorScheme.primary;
+
+    final TextStyle lifeStyle = GoogleFonts.russoOne(
+      fontSize: 88,
+      letterSpacing: -2,
+      color: isDead
+          ? colorScheme.onSurface.withOpacity(0.25)
+          : isDanger
+              ? colorScheme.error
+              : colorScheme.onSurface,
+      shadows: isDead
+          ? null
+          : [
+              Shadow(
+                color: lifeGlowColor.withOpacity(0.75),
+                blurRadius: 24,
+              ),
+              Shadow(
+                color: lifeGlowColor.withOpacity(0.35),
+                blurRadius: 60,
+              ),
+            ],
+    );
 
     return GestureDetector(
       onLongPress: () => _showActions(context),
@@ -105,7 +138,7 @@ class _PlayerCardState extends State<PlayerCard> {
         ),
         child: Stack(
           children: [
-            // ── Gesture halves (left=minus, right=plus) ──────────────────────
+            // ── Gesture halves ────────────────────────────────────────────────
             Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -126,7 +159,7 @@ class _PlayerCardState extends State<PlayerCard> {
               ],
             ),
 
-            // ── Subtle edge hints ─────────────────────────────────────────────
+            // ── Edge hints ────────────────────────────────────────────────────
             IgnorePointer(
               child: Align(
                 alignment: Alignment.centerLeft,
@@ -134,8 +167,14 @@ class _PlayerCardState extends State<PlayerCard> {
                   padding: const EdgeInsets.only(left: 14),
                   child: Icon(
                     Icons.remove_rounded,
-                    color: colorScheme.error.withOpacity(0.45),
-                    size: 28,
+                    color: colorScheme.error.withOpacity(0.5),
+                    size: 30,
+                    shadows: [
+                      Shadow(
+                        color: colorScheme.error.withOpacity(0.4),
+                        blurRadius: 12,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -147,8 +186,14 @@ class _PlayerCardState extends State<PlayerCard> {
                   padding: const EdgeInsets.only(right: 14),
                   child: Icon(
                     Icons.add_rounded,
-                    color: colorScheme.tertiary.withOpacity(0.45),
-                    size: 28,
+                    color: colorScheme.tertiary.withOpacity(0.5),
+                    size: 30,
+                    shadows: [
+                      Shadow(
+                        color: colorScheme.tertiary.withOpacity(0.4),
+                        blurRadius: 12,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -165,11 +210,11 @@ class _PlayerCardState extends State<PlayerCard> {
                     children: [
                       Text(
                         widget.player.name,
-                        style: TextStyle(
-                          color: colorScheme.onSurface.withOpacity(0.55),
-                          fontSize: 13,
+                        style: GoogleFonts.chakraPetch(
+                          fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          letterSpacing: 0.5,
+                          letterSpacing: 1.5,
+                          color: colorScheme.onSurface.withOpacity(0.45),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -183,13 +228,13 @@ class _PlayerCardState extends State<PlayerCard> {
               ),
             ),
 
-            // ── Life total + delta (centre) ───────────────────────────────────
+            // ── Life total + delta ────────────────────────────────────────────
             IgnorePointer(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Delta
+                    // Delta indicator
                     AnimatedOpacity(
                       opacity: _showDelta ? 1.0 : 0.0,
                       duration: const Duration(milliseconds: 300),
@@ -198,10 +243,16 @@ class _PlayerCardState extends State<PlayerCard> {
                         duration: const Duration(milliseconds: 200),
                         child: Text(
                           '$deltaSign$_deltaAccumulator',
-                          style: TextStyle(
+                          style: GoogleFonts.chakraPetch(
                             color: deltaColor,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            shadows: [
+                              Shadow(
+                                color: deltaColor.withOpacity(0.6),
+                                blurRadius: 12,
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -212,7 +263,7 @@ class _PlayerCardState extends State<PlayerCard> {
                       fit: BoxFit.scaleDown,
                       child: Text(
                         '${widget.player.lifeTotal}',
-                        style: Theme.of(context).textTheme.displayLarge,
+                        style: lifeStyle,
                       ),
                     ),
                   ],
@@ -220,7 +271,7 @@ class _PlayerCardState extends State<PlayerCard> {
               ),
             ),
 
-            // ── Long-press hint (bottom centre) ──────────────────────────────
+            // ── Long-press hint ───────────────────────────────────────────────
             IgnorePointer(
               child: Align(
                 alignment: Alignment.bottomCenter,
@@ -229,7 +280,7 @@ class _PlayerCardState extends State<PlayerCard> {
                   child: Icon(
                     Icons.more_horiz_rounded,
                     size: 16,
-                    color: colorScheme.onSurface.withOpacity(0.2),
+                    color: colorScheme.onSurface.withOpacity(0.18),
                   ),
                 ),
               ),
@@ -241,7 +292,7 @@ class _PlayerCardState extends State<PlayerCard> {
   }
 }
 
-/// Half-panel gesture area. Tap = one life change; hold = rapid-fire.
+/// Half-panel gesture area. Tap = one life change + history; hold = rapid-fire.
 class _HalfTapArea extends StatefulWidget {
   final String playerId;
   final int delta;
@@ -296,8 +347,8 @@ class _HalfTapAreaState extends State<_HalfTapArea> {
     final isPlus = widget.delta > 0;
     final highlightColor = _pressed
         ? (isPlus
-            ? colorScheme.tertiary.withOpacity(0.18)
-            : colorScheme.error.withOpacity(0.18))
+            ? colorScheme.tertiary.withOpacity(0.15)
+            : colorScheme.error.withOpacity(0.15))
         : Colors.transparent;
 
     return GestureDetector(
@@ -312,7 +363,7 @@ class _HalfTapAreaState extends State<_HalfTapArea> {
   }
 }
 
-/// Compact inline row of mana color dots.
+/// Compact row of mana color dots.
 class _MiniColorDots extends StatelessWidget {
   final List<MtgColor> colors;
 
@@ -330,6 +381,13 @@ class _MiniColorDots extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: c.circleColor,
+            boxShadow: [
+              BoxShadow(
+                color: c.circleColor.withOpacity(0.7),
+                blurRadius: 4,
+                spreadRadius: 0,
+              ),
+            ],
           ),
         );
       }).toList(),
@@ -337,7 +395,7 @@ class _MiniColorDots extends StatelessWidget {
   }
 }
 
-/// Bottom sheet with per-player actions: rename, colors, remove.
+/// Bottom sheet with per-player actions.
 class _PlayerActionsSheet extends StatelessWidget {
   final Player player;
   final bool canRemove;
@@ -350,6 +408,11 @@ class _PlayerActionsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final sheetBg = Color.lerp(
+      colorScheme.surfaceContainerHigh,
+      const Color(0xFF13132A),
+      0.5,
+    )!;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 32),
@@ -362,31 +425,43 @@ class _PlayerActionsSheet extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: colorScheme.onSurface.withOpacity(0.25),
+              color: colorScheme.primary.withOpacity(0.4),
               borderRadius: BorderRadius.circular(2),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primary.withOpacity(0.3),
+                  blurRadius: 6,
+                ),
+              ],
             ),
           ),
 
           Container(
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHigh,
+              color: sheetBg,
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: colorScheme.primary.withOpacity(0.15),
+                width: 1,
+              ),
             ),
             child: Column(
               children: [
                 // Player name header
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
                   child: Row(
                     children: [
                       Text(
-                        player.name,
-                        style: TextStyle(
-                          color: colorScheme.onSurface.withOpacity(0.5),
-                          fontSize: 13,
+                        player.name.toUpperCase(),
+                        style: GoogleFonts.chakraPetch(
+                          color: colorScheme.primary.withOpacity(0.8),
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          letterSpacing: 0.8,
+                          letterSpacing: 2,
                         ),
                       ),
                       if (player.colors.isNotEmpty) ...[
@@ -396,71 +471,32 @@ class _PlayerActionsSheet extends StatelessWidget {
                     ],
                   ),
                 ),
-                Divider(
-                  height: 1,
-                  color: colorScheme.onSurface.withOpacity(0.08),
-                ),
+                Divider(height: 1, color: colorScheme.primary.withOpacity(0.1)),
 
-                // Rename
-                InkWell(
+                _SheetItem(
+                  icon: Icons.edit_rounded,
+                  label: 'Rename',
+                  iconColor: colorScheme.primary,
                   onTap: () {
                     Navigator.pop(context);
                     showPlayerNameDialog(context, player);
                   },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 16),
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit_rounded,
-                            color: colorScheme.primary, size: 20),
-                        const SizedBox(width: 16),
-                        Text(
-                          'Rename',
-                          style: TextStyle(
-                            color: colorScheme.onSurface,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
                 Divider(
                   height: 1,
                   indent: 20,
                   endIndent: 20,
-                  color: colorScheme.onSurface.withOpacity(0.08),
+                  color: colorScheme.primary.withOpacity(0.08),
                 ),
 
-                // Deck colors
-                InkWell(
+                _SheetItem(
+                  icon: Icons.palette_rounded,
+                  label: 'Deck Colors',
+                  iconColor: colorScheme.tertiary,
                   onTap: () {
                     Navigator.pop(context);
                     _showColorPicker(context);
                   },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 16),
-                    child: Row(
-                      children: [
-                        Icon(Icons.palette_rounded,
-                            color: colorScheme.tertiary, size: 20),
-                        const SizedBox(width: 16),
-                        Text(
-                          'Deck Colors',
-                          style: TextStyle(
-                            color: colorScheme.onSurface,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
 
                 if (canRemove) ...[
@@ -468,34 +504,17 @@ class _PlayerActionsSheet extends StatelessWidget {
                     height: 1,
                     indent: 20,
                     endIndent: 20,
-                    color: colorScheme.onSurface.withOpacity(0.08),
+                    color: colorScheme.primary.withOpacity(0.08),
                   ),
-                  // Remove player
-                  InkWell(
+                  _SheetItem(
+                    icon: Icons.person_remove_rounded,
+                    label: 'Remove Player',
+                    iconColor: colorScheme.error,
+                    textColor: colorScheme.error,
                     onTap: () {
                       context.read<GameState>().removePlayer(player.id);
                       Navigator.pop(context);
                     },
-                    borderRadius: BorderRadius.circular(20),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 16),
-                      child: Row(
-                        children: [
-                          Icon(Icons.person_remove_rounded,
-                              color: colorScheme.error, size: 20),
-                          const SizedBox(width: 16),
-                          Text(
-                            'Remove Player',
-                            style: TextStyle(
-                              color: colorScheme.error,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ],
               ],
@@ -505,8 +524,12 @@ class _PlayerActionsSheet extends StatelessWidget {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHigh,
+              color: sheetBg,
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: colorScheme.primary.withOpacity(0.12),
+                width: 1,
+              ),
             ),
             child: InkWell(
               onTap: () => Navigator.pop(context),
@@ -516,8 +539,8 @@ class _PlayerActionsSheet extends StatelessWidget {
                 child: Center(
                   child: Text(
                     'Cancel',
-                    style: TextStyle(
-                      color: colorScheme.onSurface,
+                    style: GoogleFonts.chakraPetch(
+                      color: colorScheme.onSurface.withOpacity(0.6),
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -532,13 +555,60 @@ class _PlayerActionsSheet extends StatelessWidget {
   }
 
   void _showColorPicker(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      backgroundColor: Color.lerp(
+        colorScheme.surfaceContainerHigh,
+        const Color(0xFF13132A),
+        0.5,
+      ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _ColorPickerSheet(player: player),
+    );
+  }
+}
+
+class _SheetItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color iconColor;
+  final Color? textColor;
+  final VoidCallback onTap;
+
+  const _SheetItem({
+    required this.icon,
+    required this.label,
+    required this.iconColor,
+    required this.onTap,
+    this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 20),
+            const SizedBox(width: 16),
+            Text(
+              label,
+              style: GoogleFonts.chakraPetch(
+                color: textColor ?? cs.onSurface,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -564,6 +634,7 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       child: Column(
@@ -572,7 +643,12 @@ class _ColorPickerSheetState extends State<_ColorPickerSheet> {
         children: [
           Text(
             '${widget.player.name} — Deck Colors',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: GoogleFonts.chakraPetch(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+              color: cs.onSurface,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/mtg_color.dart';
 import 'setup_screen.dart';
 
@@ -13,9 +14,12 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late final AnimationController _entranceController;
+  late final AnimationController _glowController;
   late final AnimationController _exitController;
+
   late final Animation<double> _fadeIn;
   late final Animation<double> _scaleUp;
+  late final Animation<double> _glowPulse;
   late final Animation<double> _fadeOut;
 
   @override
@@ -24,21 +28,27 @@ class _SplashScreenState extends State<SplashScreen>
 
     _entranceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 900),
     );
+
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat(reverse: true);
 
     _exitController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 600),
     );
 
-    _fadeIn = CurvedAnimation(
-      parent: _entranceController,
-      curve: Curves.easeIn,
-    );
+    _fadeIn = CurvedAnimation(parent: _entranceController, curve: Curves.easeIn);
 
-    _scaleUp = Tween<double>(begin: 0.7, end: 1.0).animate(
+    _scaleUp = Tween<double>(begin: 0.65, end: 1.0).animate(
       CurvedAnimation(parent: _entranceController, curve: Curves.elasticOut),
+    );
+
+    _glowPulse = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
     _fadeOut = Tween<double>(begin: 1.0, end: 0.0).animate(
@@ -55,7 +65,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _entranceController.forward();
 
-    Future.delayed(const Duration(milliseconds: 2000), () {
+    Future.delayed(const Duration(milliseconds: 2200), () {
       if (mounted) _exitController.forward();
     });
   }
@@ -63,18 +73,24 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _entranceController.dispose();
+    _glowController.dispose();
     _exitController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = colorScheme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF07070F) : const Color(0xFFF0F0F8),
       body: AnimatedBuilder(
-        animation: Listenable.merge([_entranceController, _exitController]),
+        animation: Listenable.merge([
+          _entranceController,
+          _glowController,
+          _exitController,
+        ]),
         builder: (context, child) {
           return Opacity(
             opacity: _fadeOut.value,
@@ -86,26 +102,43 @@ class _SplashScreenState extends State<SplashScreen>
                   children: [
                     ScaleTransition(
                       scale: _scaleUp,
-                      child: _buildLogoOrb(),
+                      child: _buildLogoOrb(colorScheme, isDark),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 36),
                     _buildManaRow(),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 36),
+                    // "MAGIC: THE GATHERING" label
                     Text(
-                      'MTG Life Tracker',
-                      style: theme.textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                        color: colorScheme.primary,
+                      'MAGIC: THE GATHERING',
+                      style: GoogleFonts.chakraPetch(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 5,
+                        color: colorScheme.primary.withOpacity(0.7),
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
+                    // Main title
                     Text(
                       'LIFE TRACKER',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        letterSpacing: 6,
-                        color: colorScheme.onSurface.withOpacity(0.45),
+                      style: GoogleFonts.russoOne(
+                        fontSize: 32,
+                        letterSpacing: 4,
+                        color: colorScheme.onSurface,
+                        shadows: isDark
+                            ? [
+                                Shadow(
+                                  color: colorScheme.primary
+                                      .withOpacity(0.8 * _glowPulse.value),
+                                  blurRadius: 20,
+                                ),
+                                Shadow(
+                                  color: colorScheme.primary
+                                      .withOpacity(0.4 * _glowPulse.value),
+                                  blurRadius: 50,
+                                ),
+                              ]
+                            : null,
                       ),
                     ),
                   ],
@@ -118,34 +151,62 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  Widget _buildLogoOrb() {
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const RadialGradient(
-          colors: [Color(0xFF9B72D8), Color(0xFF533483)],
-          stops: [0.2, 1.0],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF533483).withOpacity(0.55),
-            blurRadius: 36,
-            spreadRadius: 6,
+  Widget _buildLogoOrb(ColorScheme colorScheme, bool isDark) {
+    return AnimatedBuilder(
+      animation: _glowPulse,
+      builder: (context, child) {
+        return Container(
+          width: 150,
+          height: 150,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const RadialGradient(
+              colors: [Color(0xFFA78BFA), Color(0xFF5B21B6), Color(0xFF2D1060)],
+              stops: [0.0, 0.55, 1.0],
+            ),
+            boxShadow: isDark
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF7C3AED)
+                          .withOpacity(0.6 * _glowPulse.value),
+                      blurRadius: 40,
+                      spreadRadius: 8,
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFF7C3AED)
+                          .withOpacity(0.25 * _glowPulse.value),
+                      blurRadius: 80,
+                      spreadRadius: 16,
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFFA78BFA)
+                          .withOpacity(0.15 * _glowPulse.value),
+                      blurRadius: 120,
+                      spreadRadius: 24,
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: const Color(0xFF533483).withOpacity(0.4),
+                      blurRadius: 36,
+                      spreadRadius: 6,
+                    ),
+                  ],
           ),
-        ],
-      ),
-      child: const Center(
+          child: child,
+        );
+      },
+      child: Center(
         child: Text(
           '♦',
           style: TextStyle(
-            fontSize: 52,
+            fontSize: 64,
             color: Colors.white,
             shadows: [
+              const Shadow(color: Colors.white70, blurRadius: 8),
               Shadow(
-                color: Colors.white38,
-                blurRadius: 12,
+                color: const Color(0xFFA78BFA).withOpacity(0.9),
+                blurRadius: 20,
               ),
             ],
           ),
@@ -159,29 +220,26 @@ class _SplashScreenState extends State<SplashScreen>
       mainAxisSize: MainAxisSize.min,
       children: MtgColor.values.map((color) {
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 7),
           child: Container(
-            width: 38,
-            height: 38,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: color.circleColor,
               boxShadow: [
                 BoxShadow(
-                  color: color.circleColor.withOpacity(0.5),
-                  blurRadius: 6,
-                  spreadRadius: 1,
+                  color: color.circleColor.withOpacity(0.65),
+                  blurRadius: 12,
+                  spreadRadius: 2,
                 ),
               ],
             ),
             child: Padding(
-              padding: const EdgeInsets.all(7),
+              padding: const EdgeInsets.all(8),
               child: SvgPicture.asset(
                 color.assetPath,
-                colorFilter: ColorFilter.mode(
-                  color.iconColor,
-                  BlendMode.srcIn,
-                ),
+                colorFilter: ColorFilter.mode(color.iconColor, BlendMode.srcIn),
               ),
             ),
           ),
