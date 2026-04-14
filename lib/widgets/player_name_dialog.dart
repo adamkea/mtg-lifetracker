@@ -9,6 +9,7 @@ Future<void> showPlayerNameDialog(
   BuildContext context,
   Player player,
 ) async {
+  final gameState = context.read<GameState>();
   final controller = TextEditingController(text: player.name);
   final newName = await showDialog<String>(
     context: context,
@@ -36,7 +37,7 @@ Future<void> showPlayerNameDialog(
     ),
   );
 
-  if (newName != null && newName.trim().isNotEmpty && context.mounted) {
-    context.read<GameState>().renamePlayer(player.id, newName);
+  if (newName != null && newName.trim().isNotEmpty) {
+    gameState.renamePlayer(player.id, newName);
   }
 }
