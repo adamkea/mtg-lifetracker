@@ -199,90 +199,98 @@ class _PlayerCardState extends State<PlayerCard> {
               ),
             ),
 
-            // ── Player name (top centre) ──────────────────────────────────────
-            IgnorePointer(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        widget.player.name,
-                        style: GoogleFonts.chakraPetch(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 1.5,
-                          color: colorScheme.onSurface.withOpacity(0.45),
+            // ── Name + life badge (centre, tap to edit) ───────────────────────
+            Center(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Fit the badge comfortably inside even the smallest grid cell.
+                  final shortest =
+                      constraints.biggest.shortestSide.isFinite
+                          ? constraints.biggest.shortestSide
+                          : 260.0;
+                  final double diameter =
+                      shortest.clamp(140.0, 260.0).toDouble();
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _showActions(context),
+                    child: Container(
+                      width: diameter,
+                      height: diameter,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: colorScheme.primary.withOpacity(0.18),
+                          width: 1.2,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      if (widget.player.colors.isNotEmpty) ...[
-                        const SizedBox(width: 6),
-                        _MiniColorDots(colors: widget.player.colors),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // ── Life total + delta ────────────────────────────────────────────
-            IgnorePointer(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Delta indicator
-                    AnimatedOpacity(
-                      opacity: _showDelta ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: AnimatedScale(
-                        scale: _showDelta ? 1.0 : 0.6,
-                        duration: const Duration(milliseconds: 200),
-                        child: Text(
-                          '$deltaSign$_deltaAccumulator',
-                          style: GoogleFonts.chakraPetch(
-                            color: deltaColor,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            shadows: [
-                              Shadow(
-                                color: deltaColor.withOpacity(0.6),
-                                blurRadius: 12,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Delta indicator
+                            AnimatedOpacity(
+                              opacity: _showDelta ? 1.0 : 0.0,
+                              duration: const Duration(milliseconds: 300),
+                              child: AnimatedScale(
+                                scale: _showDelta ? 1.0 : 0.6,
+                                duration: const Duration(milliseconds: 200),
+                                child: Text(
+                                  '$deltaSign$_deltaAccumulator',
+                                  style: GoogleFonts.chakraPetch(
+                                    color: deltaColor,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    shadows: [
+                                      Shadow(
+                                        color: deltaColor.withOpacity(0.6),
+                                        blurRadius: 12,
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ],
-                          ),
+                            ),
+                            // Player name + mini colour dots
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    widget.player.name,
+                                    style: GoogleFonts.chakraPetch(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: 1.5,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.7),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                if (widget.player.colors.isNotEmpty) ...[
+                                  const SizedBox(width: 6),
+                                  _MiniColorDots(colors: widget.player.colors),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            // Life total
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '${widget.player.lifeTotal}',
+                                style: lifeStyle,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    // Life total
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        '${widget.player.lifeTotal}',
-                        style: lifeStyle,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Long-press hint ───────────────────────────────────────────────
-            IgnorePointer(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Icon(
-                    Icons.more_horiz_rounded,
-                    size: 16,
-                    color: colorScheme.onSurface.withOpacity(0.18),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           ],
